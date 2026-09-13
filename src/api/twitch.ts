@@ -1,0 +1,106 @@
+import {
+  getQueryFfzRecentBroadcasts,
+  getQueryPlaybackAccessToken,
+  getQueryShareClipRenderStatus,
+  getQueryStreamMetadata,
+  getQueryVideoMetadata,
+  gqlRequest,
+  type FfzRecentBroadcastsUser,
+  type PlaybackAccessTokenVideo,
+  type ShareClipRenderStatusClip,
+  type StreamMetadataUser,
+  type VideoMetadataVideo,
+} from 'twitch-gql-queries';
+import { fetchText } from '../utils/fetchText.ts';
+
+const apiRequest = async <
+  TQuery extends Parameters<typeof gqlRequest>[0][number],
+  TResultKey extends string,
+>(
+  query: TQuery,
+  resultKey: TResultKey,
+  description = 'metadata',
+) => {
+  console.log(`Downloading ${description}`);
+  try {
+    const [res] = await gqlRequest([query]);
+    return (res as any)?.data[resultKey] || null;
+  } catch (e) {
+    console.error(`Unable to download ${description}`);
+    return null;
+  }
+};
+
+export const getVideoAccessToken = (id: string) =>
+  apiRequest(
+    getQueryPlaybackAccessToken({
+      isLive: false,
+      login: '',
+      isVod: true,
+      vodID: id,
+      playerType: 'site',
+      platform: 'web',
+    }),
+    'videoPlaybackAccessToken',
+    'video access token',
+  );
+
+export type StreamMetadata = StreamMetadataUser;
+
+export const getStreamMetadata = (
+  channelLogin: string,
+): Promise<StreamMetadata | null> =>
+  apiRequest(
+    getQueryStreamMetadata({ channelLogin, includeIsDJ: false }),
+    'user',
+    'stream metadata',
+  );
+
+export type VideoMetadata = VideoMetadataVideo;
+
+export const getVideoMetadata = (
+  videoId: string,
+): Promise<VideoMetadata | null> =>
+  apiRequest(
+    getQueryVideoMetadata({ channelLogin: '', videoID: videoId }),
+    'video',
+    'video metadata',
+  );
+
+export type ClipMetadata = ShareClipRenderStatusClip;
+
+export const getClipMetadata = (slug: string): Promise<ClipMetadata | null> =>
+  apiRequest(getQueryShareClipRenderStatus({ slug }), 'clip', 'clip metadata');
+
+export const getRecentArchiveBroadcasts = (
+  channelId: string,
+): Promise<FfzRecentBroadcastsUser | null> =>
+  apiRequest(
+    getQueryFfzRecentBroadcasts({
+      id: channelId,
+      type: 'ARCHIVE',
+      sort: 'TIME',
+      limit: 1,
+    }),
+    'user',
+    'recent broadcast',
+  );
+
+export const getManifest = (
+  videoId: string,
+  accessToken: PlaybackAccessTokenVideo,
+) => {
+  const params = new URLSearchParams({
+    allow_source: 'true',
+    allow_audio_only: 'true',
+    allow_spectre: 'true',
+    include_unavailable: 'true',
+    player: 'twitchweb',
+    playlist_include_framerate: 'true',
+    sig: accessToken.signature,
+    supported_codecs: 'av1,h265,h264',
+    token: accessToken.value,
+  });
+  const url = `https://usher.ttvnw.net/vod/${videoId}.m3u8?${params}`;
+  return fetchText(url, 'video manifest');
+};

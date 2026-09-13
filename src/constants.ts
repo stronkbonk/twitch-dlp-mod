@@ -1,0 +1,63 @@
+export const DEFAULT_OUTPUT_TEMPLATE = '%(title)s [%(id)s].%(ext)s';
+export const PRIVATE_VIDEO_INSTRUCTIONS =
+  'This video might be private. Follow this article to download it: https://github.com/DmitryScaletta/twitch-dlp/blob/master/DOWNLOAD_PRIVATE_VIDEOS.md';
+export const NO_TRY_UNMUTE_MESSAGE =
+  '[unmute] The video is old, not trying to unmute';
+export const VOD_DOMAINS = [
+  'https://d2e2de1etea730.cloudfront.net',
+  'https://dqrpb9wgowsf5.cloudfront.net',
+  'https://ds0h3roq6wcgc.cloudfront.net',
+  'https://d2nvs31859zcd8.cloudfront.net',
+  'https://d2aba1wr3818hz.cloudfront.net',
+  'https://d3c27h4odz752x.cloudfront.net',
+  'https://dgeft87wbj63p.cloudfront.net',
+  'https://d1m7jfoe9zdc1j.cloudfront.net',
+  'https://d3vd9lfkzbru3h.cloudfront.net',
+  'https://d2vjef5jvl6bfs.cloudfront.net',
+  'https://d1ymi26ma8va5x.cloudfront.net',
+  'https://d1mhjrowxxagfy.cloudfront.net',
+  'https://ddacn6pr5v0tl.cloudfront.net',
+  'https://d3aqoihi2n8ty8.cloudfront.net',
+  'https://d3fi1amfgojobc.cloudfront.net',
+];
+
+export const OUTPUT_DIR_ENV = 'TWITCH_DLP_OUTPUT_DIR';
+export const ARCHIVE_ENV = 'TWITCH_DLP_ARCHIVE';
+
+/** Formats `--extract-audio` can convert to (`copy` just remuxes the audio) */
+export const AUDIO_FORMATS = [
+  'mp3',
+  'm4a',
+  'opus',
+  'flac',
+  'wav',
+  'copy',
+] as const;
+
+/** File extension of the extracted audio for every `--extract-audio` value */
+export const AUDIO_EXT: Record<(typeof AUDIO_FORMATS)[number], string> = {
+  mp3: 'mp3',
+  m4a: 'm4a',
+  opus: 'opus',
+  flac: 'flac',
+  wav: 'wav',
+  copy: 'm4a',
+};
+
+/** Fragment boundary accuracy of `--precise-cut`. Everything shorter is a no-op */
+export const PRECISE_CUT_THRESHOLD_SEC = 0.05;
+
+export const DOWNLOADERS = ['aria2c', 'curl', 'fetch'] as const;
+export const MERGE_METHODS = ['ffconcat', 'append'] as const;
+export const UNMUTE = {
+  QUALITY: 'quality',
+  ANY: 'any',
+  SAME_FORMAT: 'same_format',
+  OFF: 'off',
+} as const;
+
+export const RET_CODE = {
+  OK: 0,
+  UNKNOWN_ERROR: 1,
+  HTTP_RETURNED_ERROR: 22,
+} as const;

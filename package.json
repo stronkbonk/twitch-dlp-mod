@@ -1,0 +1,31 @@
+{
+  "name": "twitch-dlp-mod",
+  "version": "0.7.0",
+  "author": "stronkbonk",
+  "description": "Download any twitch VODs from start during live broadcast. Mod: live section downloads, stream snapshots, parallel fragments, batch downloads, archives, audio extraction, webhooks",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/stronkbonk/twitch-dlp-mod.git"
+  },
+  "type": "module",
+  "files": [],
+  "bin": "twitch-dlp.js",
+  "scripts": {
+    "start": "node ./src/main.ts",
+    "build": "rolldown src/main.ts --platform node > twitch-dlp.js",
+    "test": "node --experimental-transform-types --test **/*.test.ts",
+    "test:watch": "node --experimental-transform-types --test --watch **/*.test.ts",
+    "test:types": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@trivago/prettier-plugin-sort-imports": "^6.0.0",
+    "@types/node": "^24.10.1",
+    "rolldown": "^0.15.1",
+    "prettier": "^3.6.2",
+    "twitch-gql-queries": "^0.1.18",
+    "twitch-regex": "^0.1.3",
+    "typescript": "^5.9.3"
+  },
+  "packageManager": "pnpm@10.22.0+sha512.bf049efe995b28f527fd2b41ae0474ce29186f7edcb3bf545087bd61fbbebb2bf75362d1307fda09c2d288e1e499787ac12d4fcb617a974718a6051f2eee741c"
+}
