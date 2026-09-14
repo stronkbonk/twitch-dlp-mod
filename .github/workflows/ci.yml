@@ -15,17 +15,20 @@ jobs:
         with:
           node-version: 22
 
+      # The lockfile is committed, so install exactly what it pins
       - name: Install dependencies
-        run: npm install --no-audit --no-fund
+        run: |
+          corepack enable
+          pnpm install --frozen-lockfile
 
       - name: Typecheck
-        run: npm run test:types
+        run: pnpm run test:types
 
       - name: Test
-        run: npm test
+        run: pnpm test
 
       - name: Build the bundle
-        run: npm run build
+        run: pnpm run build
 
       # The bundle is committed, so it must never fall behind the sources
       - name: Check that the committed bundle is up to date

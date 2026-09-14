@@ -1887,18 +1887,22 @@ const getVideoInfoByVideoMeta = (videoMeta) => ({
 	view_count: videoMeta.viewCount,
 	ext: "mp4"
 });
-const getVideoInfoByStreamMeta = (streamMeta, channelLogin) => ({
-	id: `v${streamMeta.lastBroadcast.id}`,
-	title: streamMeta.lastBroadcast.title || DEFAULT_TITLE,
-	description: null,
-	duration: null,
-	uploader: channelLogin,
-	uploader_id: streamMeta.id,
-	upload_date: streamMeta.stream.createdAt,
-	release_date: streamMeta.stream.createdAt,
-	view_count: null,
-	ext: "mp4"
-});
+const getVideoInfoByStreamMeta = (streamMeta, channelLogin) => {
+	const broadcast = streamMeta.lastBroadcast;
+	const startedAt = streamMeta.stream?.createdAt ?? null;
+	return {
+		id: `v${broadcast?.id ?? streamMeta.stream?.id ?? ""}`,
+		title: broadcast?.title || DEFAULT_TITLE,
+		description: null,
+		duration: null,
+		uploader: channelLogin,
+		uploader_id: streamMeta.id,
+		upload_date: startedAt,
+		release_date: startedAt,
+		view_count: null,
+		ext: "mp4"
+	};
+};
 const getVideoInfoByVodPath = ({ channelLogin, videoId, startTimestamp }) => ({
 	id: `v${videoId}`,
 	title: `${channelLogin}_${startTimestamp}`,
@@ -2109,7 +2113,7 @@ const getLiveVideoInfo = async (streamMeta, channelLogin) => {
 	let videoInfo = null;
 	if (!streamMeta.stream) throw new Error();
 	const broadcasts = await getRecentArchiveBroadcasts(streamMeta.id);
-	const edges = broadcasts?.videos.edges;
+	const edges = broadcasts?.videos?.edges;
 	const broadcast = edges?.[0]?.node;
 	const startTimestampMs = new Date(streamMeta.stream.createdAt).getTime();
 	if (broadcast && startTimestampMs <= new Date(broadcast.createdAt).getTime()) {

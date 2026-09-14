@@ -21,18 +21,24 @@ export const getVideoInfoByVideoMeta = (
 export const getVideoInfoByStreamMeta = (
   streamMeta: api.StreamMetadata,
   channelLogin: string,
-): VideoInfo => ({
-  id: `v${streamMeta.lastBroadcast.id}`,
-  title: streamMeta.lastBroadcast.title || DEFAULT_TITLE,
-  description: null,
-  duration: null,
-  uploader: channelLogin,
-  uploader_id: streamMeta.id,
-  upload_date: streamMeta.stream!.createdAt,
-  release_date: streamMeta.stream!.createdAt,
-  view_count: null,
-  ext: 'mp4',
-});
+): VideoInfo => {
+  // The broadcast of the running stream is usually there, but the API types
+  // allow it to be missing, so naming a file can't depend on it
+  const broadcast = streamMeta.lastBroadcast;
+  const startedAt = streamMeta.stream?.createdAt ?? null;
+  return {
+    id: `v${broadcast?.id ?? streamMeta.stream?.id ?? ''}`,
+    title: broadcast?.title || DEFAULT_TITLE,
+    description: null,
+    duration: null,
+    uploader: channelLogin,
+    uploader_id: streamMeta.id,
+    upload_date: startedAt,
+    release_date: startedAt,
+    view_count: null,
+    ext: 'mp4',
+  };
+};
 
 export const getVideoInfoByVodPath = ({
   channelLogin,
