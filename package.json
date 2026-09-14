@@ -1,6 +1,6 @@
 {
   "name": "twitch-dlp-mod",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "author": "stronkbonk",
   "description": "Download any twitch VODs from start during live broadcast. Mod: live section downloads, stream snapshots, parallel fragments, batch downloads, archives, audio extraction, webhooks",
   "license": "MIT",

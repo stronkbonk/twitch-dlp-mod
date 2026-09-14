@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Typecheck
+        run: npm run test:types
+
+      - name: Test
+        run: npm test
+
+      - name: Build the bundle
+        run: npm run build
+
+      # The bundle is committed, so it must never fall behind the sources
+      - name: Check that the committed bundle is up to date
+        run: git diff --exit-code twitch-dlp.js
+
+      - name: Run the bundle
+        run: |
+          node twitch-dlp.js --version
+          node twitch-dlp.js --help > /dev/null

@@ -1,5 +1,7 @@
 # twitch-dlp-mod
 
+[![CI](https://github.com/stronkbonk/twitch-dlp-mod/actions/workflows/ci.yml/badge.svg)](https://github.com/stronkbonk/twitch-dlp-mod/actions/workflows/ci.yml)
+
 Download any twitch VODs from start during live broadcast
 
 ## Features
