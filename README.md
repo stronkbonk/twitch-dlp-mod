@@ -22,6 +22,9 @@ Download any twitch VODs from start during live broadcast
   waited for
 - Snapshot downloads: grab everything from the stream start up to the moment the
   download started and stop instead of following the live edge (`--until-now`)
+- A plain explanation when a stream can't be downloaded from the start (the
+  channel doesn't store past broadcasts), and `--fallback-live-edge` to record
+  it from the live edge instead of failing
 - Limit a download by duration (`--duration 30m`)
 - Human readable times everywhere: `10m`, `1h30m`, `90s`, `1:30:00` and plain
   seconds
@@ -203,6 +206,34 @@ npx github:stronkbonk/twitch-dlp-mod "./Chillin [v2222470239].mp4" --merge-fragm
 npx github:stronkbonk/twitch-dlp-mod "./Chillin [v2222470239].mp4" --merge-fragments --unmute quality
 ```
 
+### Streams that can't be downloaded from the start
+
+`--live-from-start` needs Twitch to record the stream. That only happens when
+the streamer has "Store past broadcasts" enabled, and it is off by default for
+some channels. For those channels the stream has no video at all, so nothing
+can download it from the start and the command stops with:
+
+```text
+[live-from-start] Cannot download from the start: this channel stores no
+past broadcasts, so Twitch has no video of the stream to download.
+```
+
+Add `--fallback-live-edge` to record the stream from the live edge in that
+case, or drop `--live-from-start` to do it by hand:
+
+```bash
+# Record from the live edge if the channel doesn't store past broadcasts
+npx github:stronkbonk/twitch-dlp-mod https://www.twitch.tv/CHANNEL --live-from-start --fallback-live-edge
+
+# Or record the live stream with streamlink, from the current time on
+npx github:stronkbonk/twitch-dlp-mod https://www.twitch.tv/CHANNEL
+```
+
+Recording from the live edge only saves what happens from now on, because Twitch
+didn't keep the earlier part of the stream. Range options (`--download-last`,
+`--download-sections`, `--duration`, `--until-now`) also can't be served that
+way and are ignored, with a warning. Both need [streamlink](https://streamlink.github.io/).
+
 ## Options
 
 ```text
@@ -231,34 +262,39 @@ npx github:stronkbonk/twitch-dlp-mod "./Chillin [v2222470239].mp4" --merge-fragm
                             between each attempt
 -r, --limit-rate RATE       Limit download rate to RATE
 --keep-fragments            Keep fragments after downloading
---download-sections TEXT    Download specific part of the video or of a live 
+--download-sections TEXT    Download specific part of the video or of a live
                             stream (with --live-from-start).
                             Syntax: "*start_time-end_time".
                             Examples: "*0-12:34", "*3:14:15-inf", "*10m-25m".
                             A "*" prefix is for yt-dlp compatibility.
-                            Times can be written as seconds ("600"), as 
-                            min:sec ("12:34"), as hour:min:sec ("3:14:15") or 
+                            Times can be written as seconds ("600"), as
+                            min:sec ("12:34"), as hour:min:sec ("3:14:15") or
                             with units ("45s", "10m", "1h30m").
-                            If the end of the section is in the future, the 
+                            If the end of the section is in the future, the
                             download waits for it to air (live streams only).
-                            Negative timestamps and multiple sections are not 
-                            supported. Cutting is done by the closest fragments 
+                            Negative timestamps and multiple sections are not
+                            supported. Cutting is done by the closest fragments
                             (not by keyframes), so the accuracy is not very high
 --download-last TIME        Download only the last TIME of the stream/video and
-                            stop. Works with videos and with live streams 
-                            (with --live-from-start), where TIME is counted 
-                            from the live edge at the moment you started the 
+                            stop. Works with videos and with live streams
+                            (with --live-from-start), where TIME is counted
+                            from the live edge at the moment you started the
                             download. Example: "--download-last 10m"
---duration TIME             Download only TIME from the start of the range 
-                            (or from the start of the stream). Example: 
-                            "--live-from-start --duration 30m" records the 
+--duration TIME             Download only TIME from the start of the range
+                            (or from the start of the stream). Example:
+                            "--live-from-start --duration 30m" records the
                             first 30 minutes
---until-now                 Stop at the live edge at the moment the download 
-                            started instead of following the stream. Use it to 
-                            get a snapshot of a live stream: everything from 
-                            the start of the stream up to now. Can be combined 
-                            with --download-sections, e.g. 
+--until-now                 Stop at the live edge at the moment the download
+                            started instead of following the stream. Use it to
+                            get a snapshot of a live stream: everything from
+                            the start of the stream up to now. Can be combined
+                            with --download-sections, e.g.
                             "--download-sections \"*10:00-inf\" --until-now"
+--fallback-live-edge        Record from the live edge when a stream can't be
+                            downloaded from the start (the channel stores no
+                            past broadcasts), instead of failing. The range
+                            options can't be honoured then, only what happens
+                            from now on is saved. Requires streamlink
 --precise-cut               Cut the requested range frame accurately instead of
                             by the closest fragments. The result is re-encoded,
                             which is slow, but the start and the end match the
@@ -285,12 +321,12 @@ npx github:stronkbonk/twitch-dlp-mod "./Chillin [v2222470239].mp4" --merge-fragm
 --merge-method METHOD       How fragments should be merged. Merging happens
                             only after all fragments are downloaded.
                             Available values:
-                            * ffconcat (default) - using ffmpeg's concat 
+                            * ffconcat (default) - using ffmpeg's concat
                               demuxer, no fixup needed
                             * append - merge all fragments into one file and
                               fixup using ffmpeg (like yt-dlp does)
 --merge-fragments           Merge already downloaded fragments. A FILENAME
-                            should be passed instead of a video link. The 
+                            should be passed instead of a video link. The
                             FILENAME must match the fragment names but without
                             ".part-FragN". Example: "npx
                             github:stronkbonk/twitch-dlp-mod FILENAME
@@ -302,28 +338,28 @@ npx github:stronkbonk/twitch-dlp-mod "./Chillin [v2222470239].mp4" --merge-fragm
                               according to passed unmute policy (off by
                               default)
                             * --merge-method - change merge method
---frag-concurrency N        Download N fragments in parallel (default: 1). 
+--frag-concurrency N        Download N fragments in parallel (default: 1).
                             Speeds up downloads a lot on fast connections
---frag-retries N            How many times a failed fragment download is 
-                            retried (default: 5). Retries use exponential 
+--frag-retries N            How many times a failed fragment download is
+                            retried (default: 5). Retries use exponential
                             backoff
---poll-interval SEC         How often (sec) new fragments are checked for 
-                            while the stream is live (default: 60). Lower 
+--poll-interval SEC         How often (sec) new fragments are checked for
+                            while the stream is live (default: 60). Lower
                             values make live section downloads finish sooner
 --audio-only                Download only the audio track (saved as m4a).
                             Cannot be used with --format
 --extract-audio FORMAT      Convert the downloaded video to an audio-only file
-                            and remove the video afterwards (unless 
+                            and remove the video afterwards (unless
                             --keep-video). Requires ffmpeg.
                             Available formats:
                             * mp3, m4a, opus, flac, wav
                             * copy - only extract the audio stream, no re-encode
 --keep-video                Keep the video file when --extract-audio is used
--P, --output-dir DIR        Directory for the output file. The output 
+-P, --output-dir DIR        Directory for the output file. The output
                             template is resolved inside DIR
---write-info-json           Save video metadata to FILE.info.json next to the 
+--write-info-json           Save video metadata to FILE.info.json next to the
                             video
---webhook URL               POST a notification to URL when the download is 
+--webhook URL               POST a notification to URL when the download is
                             finished or failed (Discord/Slack compatible)
 --dry-run                   Print what would be downloaded (range, fragments
                             and destination) and exit. Nothing is downloaded
@@ -339,7 +375,7 @@ npx github:stronkbonk/twitch-dlp-mod "./Chillin [v2222470239].mp4" --merge-fragm
                             (default: 0)
 
 Environment variables:
-* TWITCH_DLP_OUTPUT_DIR - default directory for downloaded files 
+* TWITCH_DLP_OUTPUT_DIR - default directory for downloaded files
   (same as --output-dir, e.g. "E:/Twitch VODs")
 * TWITCH_DLP_ARCHIVE - default file for --download-archive
 

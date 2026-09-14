@@ -1194,6 +1194,7 @@ const normalizeArgs = async (args) => {
 	} else newArgs["extract-audio"] = undefined;
 	if (args["audio-only"] && args.format !== "best") throw new Error("--audio-only cannot be used with --format");
 	if (newArgs["download-last"] && newArgs["download-sections"]) throw new Error("--download-last cannot be used with --download-sections");
+	if (args["fallback-live-edge"] && !args["live-from-start"]) throw new Error("--fallback-live-edge can only be used with --live-from-start");
 	if (newArgs.duration && newArgs["download-last"]) throw new Error("--duration cannot be used with --download-last");
 	if (!newArgs["output-dir"]) newArgs["output-dir"] = process.env[OUTPUT_DIR_ENV] || undefined;
 	if (!newArgs["download-archive"]) newArgs["download-archive"] = process.env[ARCHIVE_ENV] || undefined;
@@ -2062,9 +2063,9 @@ const getVodUrl = (vodDomain, fullVodPath, broadcastType = "ARCHIVE", videoId = 
 const getAvailableFormats = async (vodDomain, fullVodPath, broadcastType, videoId) => {
 	const formats = [];
 	const formatUrls = FORMATS.map((format) => getVodUrl(vodDomain, fullVodPath, broadcastType, videoId, format));
-	const responses = await Promise.all(formatUrls.map((url) => fetch(url, { method: "HEAD" })));
+	const responses = await Promise.all(formatUrls.map((url) => fetch(url, { method: "HEAD" }).catch(() => null)));
 	for (const [i, res] of responses.entries()) {
-		if (!res.ok) continue;
+		if (!res?.ok) continue;
 		const format = FORMATS[i];
 		let height = null;
 		let frameRate = null;
@@ -2108,7 +2109,8 @@ const getLiveVideoInfo = async (streamMeta, channelLogin) => {
 	let videoInfo = null;
 	if (!streamMeta.stream) throw new Error();
 	const broadcasts = await getRecentArchiveBroadcasts(streamMeta.id);
-	const broadcast = broadcasts?.videos.edges[0]?.node;
+	const edges = broadcasts?.videos.edges;
+	const broadcast = edges?.[0]?.node;
 	const startTimestampMs = new Date(streamMeta.stream.createdAt).getTime();
 	if (broadcast && startTimestampMs <= new Date(broadcast.createdAt).getTime()) {
 		let videoMeta;
@@ -2123,16 +2125,38 @@ const getLiveVideoInfo = async (streamMeta, channelLogin) => {
 		formats = await getVideoFormatsByFullVodPath(getFullVodPath(vodPath));
 		videoInfo = getVideoInfoByStreamMeta(streamMeta, channelLogin);
 	}
-	if (formats.length === 0 || !videoInfo) return null;
-	return {
+	if (formats.length > 0 && videoInfo) return {
+		ok: true,
 		formats,
 		videoInfo
 	};
+	const issue = edges?.length === 0 ? "no-stored-vods" : "vod-not-ready";
+	return {
+		ok: false,
+		issue
+	};
+};
+
+//#endregion
+//#region src/utils/liveFromStartIssue.ts
+const isRetryableIssue = (issue) => issue === "vod-not-ready";
+const getIssueLines = (issue, options) => {
+	const lines = [];
+	if (issue === "no-stored-vods") {
+		lines.push("[live-from-start] Cannot download from the start: this channel stores no", "past broadcasts, so Twitch has no video of the stream to download.", "Twitch records a stream only when the streamer enables \"Store past", "broadcasts\" and it is off for this channel, so its past is not available", "to any tool. Use a VOD link if one exists, or record from now on instead.");
+		if (options.hasRangeArgs) lines.push("The requested range (--download-last, --download-sections, --duration or", "--until-now) needs that video, because the past was never recorded.");
+		lines.push("Drop --live-from-start to record the stream from the live edge (needs", "streamlink), or pass --fallback-live-edge to fall back to that on its own.");
+		return lines;
+	}
+	lines.push("[live-from-start] The stream's video isn't available yet. Twitch publishes", "it a few seconds after the stream starts and keeps it hidden for a moment");
+	lines.push(options.isRetry ? `Retry every ${options.delaySec} second(s)` : "Try again in a moment, or pass --retry-streams 60 to wait for it");
+	return lines;
 };
 
 //#endregion
 //#region src/commands/downloadByChannelLogin.ts
 const downloadByChannelLogin = async (channelLogin, args) => {
+	const link = `https://www.twitch.tv/${channelLogin}`;
 	const delay = args["retry-streams"] || 0;
 	const isLiveFromStart = args["live-from-start"];
 	const isRetry = delay > 0;
@@ -2146,20 +2170,26 @@ else {
 			console.warn("[download] The channel is not currently live");
 			return "failed";
 		}
-		if (isLive && !isLiveFromStart) await downloadWithStreamlink(`https://www.twitch.tv/${channelLogin}`, streamMeta, channelLogin, args);
+		if (isLive && !isLiveFromStart) await downloadWithStreamlink(link, streamMeta, channelLogin, args);
 		if (isLive && isLiveFromStart) {
 			const liveVideoInfo = await getLiveVideoInfo(streamMeta, channelLogin);
-			if (liveVideoInfo) {
+			if (liveVideoInfo.ok) {
 				const { formats, videoInfo } = liveVideoInfo;
 				const outcome = await downloadVideo(formats, videoInfo, args);
 				if (!isRetry || args["download-sections"]) return outcome;
 			} else {
-				let message = `[live-from-start] Cannot find the playlist`;
-				if (isRetry) {
-					message += `. Retry every ${delay} second(s)`;
-					console.warn(message);
-				} else {
-					console.warn(message);
+				const { issue } = liveVideoInfo;
+				for (const line of getIssueLines(issue, {
+					isRetry,
+					delaySec: delay,
+					hasRangeArgs: isRangeArg
+				})) console.warn(line);
+				if (!isRetry || !isRetryableIssue(issue)) {
+					if (args["fallback-live-edge"]) {
+						console.warn("[fallback-live-edge] Recording from the live edge instead");
+						await downloadWithStreamlink(link, streamMeta, channelLogin, args);
+						return;
+					}
 					return "failed";
 				}
 			}
@@ -2421,7 +2451,10 @@ else downloaded += 1;
 			console.error(`${chalk.red("ERROR:")} ${link}: ${e.message}`);
 		}
 	}
-	if (!isBatch) return;
+	if (!isBatch) {
+		if (failed > 0) process.exitCode = 1;
+		return;
+	}
 	const summary = [
 		`${downloaded} downloaded`,
 		skipped ? `${skipped} skipped` : null,
@@ -2473,6 +2506,7 @@ const getArgs = () => parseArgs({
 		"download-last": { type: "string" },
 		duration: { type: "string" },
 		"until-now": { type: "boolean" },
+		"fallback-live-edge": { type: "boolean" },
 		"frag-concurrency": { type: "string" },
 		"frag-retries": { type: "string" },
 		"poll-interval": { type: "string" },
@@ -2532,7 +2566,10 @@ const main = async () => {
 	if (links.length === 0) return showHelp();
 	return runBatch(links, args);
 };
-main().catch((e) => console.error(chalk.red("ERROR:"), e.message));
+main().catch((e) => {
+	console.error(chalk.red("ERROR:"), e.message);
+	process.exitCode = 1;
+});
 
 //#endregion
 export { getArgs };

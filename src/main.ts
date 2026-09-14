@@ -65,6 +65,9 @@ export const getArgs = () =>
       'until-now': {
         type: 'boolean',
       },
+      'fallback-live-edge': {
+        type: 'boolean',
+      },
       'frag-concurrency': {
         type: 'string',
       },
@@ -166,4 +169,7 @@ const main = async () => {
   return runBatch(links, args);
 };
 
-main().catch((e) => console.error(chalk.red('ERROR:'), e.message));
+main().catch((e) => {
+  console.error(chalk.red('ERROR:'), e.message);
+  process.exitCode = 1;
+});

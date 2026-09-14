@@ -62,11 +62,13 @@ const getAvailableFormats = async (
   const formatUrls = FORMATS.map((format) =>
     getVodUrl(vodDomain, fullVodPath, broadcastType, videoId, format),
   );
+  // A failed probe means "no such format" here, so one flaky request can't
+  // abort the whole download
   const responses = await Promise.all(
-    formatUrls.map((url) => fetch(url, { method: 'HEAD' })),
+    formatUrls.map((url) => fetch(url, { method: 'HEAD' }).catch(() => null)),
   );
   for (const [i, res] of responses.entries()) {
-    if (!res.ok) continue;
+    if (!res?.ok) continue;
     const format = FORMATS[i];
     let height: number | null = null;
     let frameRate: number | null = null;

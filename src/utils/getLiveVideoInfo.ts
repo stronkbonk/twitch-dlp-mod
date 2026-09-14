@@ -9,18 +9,24 @@ import {
   getVideoInfoByStreamMeta,
   getVideoInfoByVideoMeta,
 } from './getVideoInfo.ts';
+import type { LiveFromStartIssue } from './liveFromStartIssue.ts';
+
+export type LiveVideoInfoResult =
+  | { ok: true; formats: DownloadFormat[]; videoInfo: VideoInfo }
+  | { ok: false; issue: LiveFromStartIssue };
 
 export const getLiveVideoInfo = async (
   streamMeta: api.StreamMetadata,
   channelLogin: string,
-) => {
+): Promise<LiveVideoInfoResult> => {
   let formats: DownloadFormat[] = [];
   let videoInfo: VideoInfo | null = null;
 
   if (!streamMeta.stream) throw new Error(); // make ts happy
 
   const broadcasts = await api.getRecentArchiveBroadcasts(streamMeta.id);
-  const broadcast = broadcasts?.videos.edges[0]?.node;
+  const edges = broadcasts?.videos.edges;
+  const broadcast = edges?.[0]?.node;
 
   const startTimestampMs = new Date(streamMeta.stream.createdAt).getTime();
 
@@ -50,7 +56,12 @@ export const getLiveVideoInfo = async (
     videoInfo = getVideoInfoByStreamMeta(streamMeta, channelLogin);
   }
 
-  if (formats.length === 0 || !videoInfo) return null;
+  if (formats.length > 0 && videoInfo) return { ok: true, formats, videoInfo };
 
-  return { formats, videoInfo };
+  // Twitch lists the videos it stores: no archived broadcast at all means the
+  // channel doesn't store past broadcasts. If there is an older one (or the
+  // request failed), the stream's own video just isn't published yet
+  const issue: LiveFromStartIssue =
+    edges?.length === 0 ? 'no-stored-vods' : 'vod-not-ready';
+  return { ok: false, issue };
 };

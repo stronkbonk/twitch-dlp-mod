@@ -115,6 +115,11 @@ export const normalizeArgs = async (args: RawArgs['values']) => {
   if (newArgs['download-last'] && newArgs['download-sections']) {
     throw new Error('--download-last cannot be used with --download-sections');
   }
+  if (args['fallback-live-edge'] && !args['live-from-start']) {
+    throw new Error(
+      '--fallback-live-edge can only be used with --live-from-start',
+    );
+  }
   if (newArgs.duration && newArgs['download-last']) {
     throw new Error('--duration cannot be used with --download-last');
   }

@@ -4,11 +4,16 @@ import type { AppArgs, DownloadOutcome } from '../types.ts';
 import { downloadVideo } from '../utils/downloadVideo.ts';
 import { downloadWithStreamlink } from '../utils/downloadWithStreamlink.ts';
 import { getLiveVideoInfo } from '../utils/getLiveVideoInfo.ts';
+import {
+  getIssueLines,
+  isRetryableIssue,
+} from '../utils/liveFromStartIssue.ts';
 
 export const downloadByChannelLogin = async (
   channelLogin: string,
   args: AppArgs,
 ): Promise<DownloadOutcome | void> => {
+  const link = `https://www.twitch.tv/${channelLogin}`;
   const delay = args['retry-streams'] || 0;
   const isLiveFromStart = args['live-from-start'];
   const isRetry = delay > 0;
@@ -41,28 +46,34 @@ export const downloadByChannelLogin = async (
 
     // not from start
     if (isLive && !isLiveFromStart) {
-      await downloadWithStreamlink(
-        `https://www.twitch.tv/${channelLogin}`,
-        streamMeta,
-        channelLogin,
-        args,
-      );
+      await downloadWithStreamlink(link, streamMeta, channelLogin, args);
     }
 
     // from start
     if (isLive && isLiveFromStart) {
       const liveVideoInfo = await getLiveVideoInfo(streamMeta, channelLogin);
-      if (liveVideoInfo) {
+      if (liveVideoInfo.ok) {
         const { formats, videoInfo } = liveVideoInfo;
         const outcome = await downloadVideo(formats, videoInfo, args);
         if (!isRetry || args['download-sections']) return outcome;
       } else {
-        let message = `[live-from-start] Cannot find the playlist`;
-        if (isRetry) {
-          message += `. Retry every ${delay} second(s)`;
-          console.warn(message);
-        } else {
-          console.warn(message);
+        const { issue } = liveVideoInfo;
+        for (const line of getIssueLines(issue, {
+          isRetry,
+          delaySec: delay,
+          hasRangeArgs: isRangeArg,
+        })) {
+          console.warn(line);
+        }
+        // Retrying only helps while the stream's video may still appear
+        if (!isRetry || !isRetryableIssue(issue)) {
+          if (args['fallback-live-edge']) {
+            console.warn(
+              '[fallback-live-edge] Recording from the live edge instead',
+            );
+            await downloadWithStreamlink(link, streamMeta, channelLogin, args);
+            return;
+          }
           return 'failed';
         }
       }

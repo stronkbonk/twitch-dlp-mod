@@ -45,7 +45,11 @@ export const runBatch = async (links: string[], args: AppArgs) => {
     }
   }
 
-  if (!isBatch) return;
+  // Even a single link should fail loudly, so scripts can react to it
+  if (!isBatch) {
+    if (failed > 0) process.exitCode = 1;
+    return;
+  }
 
   const summary = [
     `${downloaded} downloaded`,
