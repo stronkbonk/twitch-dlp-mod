@@ -7,7 +7,7 @@ Download any twitch VODs from start during live broadcast
 - Download live VODs from start (`--live-from-start`)
 - Download ongoing hidden VODs (or if they were hidden during the broadcast)
 - Download finished hidden VODs
-  - Just use [twitchtracker.com](https://twitchtracker.com), [streamscharts.com](https://streamscharts.com) or [sullygnome.com](https://sullygnome.com) links ([details](https://github.com/DmitryScaletta/twitch-dlp/blob/master/DOWNLOAD_PRIVATE_VIDEOS.md))
+  - Just use [twitchtracker.com](https://twitchtracker.com), [streamscharts.com](https://streamscharts.com) or [sullygnome.com](https://sullygnome.com) links ([details](https://github.com/stronkbonk/twitch-dlp-mod/blob/master/DOWNLOAD_PRIVATE_VIDEOS.md))
 - Download specific part of the video (`--download-sections`)
 - Download clips (including portrait versions)
 - Automatically unmute muted sections if possible
@@ -47,22 +47,32 @@ Download any twitch VODs from start during live broadcast
 
 Install the latest [Node.js](https://nodejs.org/) version (v22 or newer).
 
+Run the mod straight from GitHub, without installing anything:
+
 ```bash
-# npm
-npx twitch-dlp LINK
-
-# pnpm
-pnpm dlx twitch-dlp LINK
-
-# yarn v2+
-yarn dlx twitch-dlp LINK
+npx github:stronkbonk/twitch-dlp-mod LINK
 ```
+
+> [!IMPORTANT]
+> `npx twitch-dlp` downloads the **original** project from npm, which doesn't
+> have any of the extra flags. Keep the `github:stronkbonk/` part.
+
+Install it once if you use it often. This adds a `twitch-dlp-mod` command:
+
+```bash
+npm install --global github:stronkbonk/twitch-dlp-mod
+twitch-dlp-mod LINK
+```
+
+Every command below is written as `npx github:stronkbonk/twitch-dlp-mod` so it
+works without installing anything. If you installed the package globally, you
+can write `twitch-dlp-mod` instead.
 
 ### Changing the output directory
 
 ```bash
 # Download to a specific directory (works with --output-dir / -P)
-node twitch-dlp.js https://www.twitch.tv/videos/2022789761 -P "E:/Twitch VODs"
+npx github:stronkbonk/twitch-dlp-mod https://www.twitch.tv/videos/2022789761 -P "E:/Twitch VODs"
 
 # Or set it once as the default directory for every download
 # Windows (cmd)
@@ -81,6 +91,8 @@ only when `-P, --output-dir` is not passed.
 ### Running from the sources
 
 ```bash
+git clone https://github.com/stronkbonk/twitch-dlp-mod.git
+cd twitch-dlp-mod
 npm install
 
 # bundled version
@@ -98,97 +110,97 @@ npm run build
 ```bash
 # Download every link of a batch file one after another, keep a list of what
 # was downloaded and skip everything that is already in it
-npx twitch-dlp --batch-file links.txt --download-archive archive.txt
+npx github:stronkbonk/twitch-dlp-mod --batch-file links.txt --download-archive archive.txt
 
 # The same, one video per line, saved to a specific directory
-npx twitch-dlp --batch-file links.txt --download-archive archive.txt -P "E:/Twitch VODs"
+npx github:stronkbonk/twitch-dlp-mod --batch-file links.txt --download-archive archive.txt -P "E:/Twitch VODs"
 
 # Download several videos in one run (a failing link doesn't stop the rest)
-npx twitch-dlp https://www.twitch.tv/videos/111 https://www.twitch.tv/videos/222
+npx github:stronkbonk/twitch-dlp-mod https://www.twitch.tv/videos/111 https://www.twitch.tv/videos/222
 
 # Download only the audio track, saved as m4a
-npx twitch-dlp https://www.twitch.tv/videos/2022789761 --audio-only
+npx github:stronkbonk/twitch-dlp-mod https://www.twitch.tv/videos/2022789761 --audio-only
 
 # Download a video and convert it to mp3 (the video file is removed)
-npx twitch-dlp https://www.twitch.tv/videos/2022789761 --extract-audio mp3
+npx github:stronkbonk/twitch-dlp-mod https://www.twitch.tv/videos/2022789761 --extract-audio mp3
 
 # Cut a section frame accurately instead of by the closest fragments
-npx twitch-dlp https://www.twitch.tv/videos/2022789761 --download-sections "*15:00-25:00" --precise-cut
+npx github:stronkbonk/twitch-dlp-mod https://www.twitch.tv/videos/2022789761 --download-sections "*15:00-25:00" --precise-cut
 
 # Download a VOD from start using channel link, continue until stream ends
-npx twitch-dlp https://www.twitch.tv/xqc --live-from-start
+npx github:stronkbonk/twitch-dlp-mod https://www.twitch.tv/xqc --live-from-start
 
 # Download a VOD
-npx twitch-dlp https://www.twitch.tv/videos/2022789761
+npx github:stronkbonk/twitch-dlp-mod https://www.twitch.tv/videos/2022789761
 
 # Download live stream from the current time using streamlink
-npx twitch-dlp https://www.twitch.tv/xqc
+npx github:stronkbonk/twitch-dlp-mod https://www.twitch.tv/xqc
 
 # Download a hidden VOD
 # Just use twitchtracker.com, streamscharts.com or sullygnome.com links
-npx twitch-dlp https://twitchtracker.com/xqc/streams/51582913581
-npx twitch-dlp https://streamscharts.com/channels/lirik/streams/51579711693
-npx twitch-dlp https://sullygnome.com/channel/summit1g/stream/315782796250
+npx github:stronkbonk/twitch-dlp-mod https://twitchtracker.com/xqc/streams/51582913581
+npx github:stronkbonk/twitch-dlp-mod https://streamscharts.com/channels/lirik/streams/51579711693
+npx github:stronkbonk/twitch-dlp-mod https://sullygnome.com/channel/summit1g/stream/315782796250
 # If it doesn't work for you, follow this instructions:
-# https://github.com/DmitryScaletta/twitch-dlp/blob/master/DOWNLOAD_PRIVATE_VIDEOS.md
+# https://github.com/stronkbonk/twitch-dlp-mod/blob/master/DOWNLOAD_PRIVATE_VIDEOS.md
 
 # Check every 60 seconds is channel live
 # If it's live, start to download it using streamlink
-npx twitch-dlp https://www.twitch.tv/xqc --retry-streams 60
+npx github:stronkbonk/twitch-dlp-mod https://www.twitch.tv/xqc --retry-streams 60
 
 # Check every 60 seconds is channel live
 # If it's live, start to download it's VOD from start
-npx twitch-dlp https://www.twitch.tv/xqc --retry-streams 60 --live-from-start
+npx github:stronkbonk/twitch-dlp-mod https://www.twitch.tv/xqc --retry-streams 60 --live-from-start
 
 # Download 10 minutes in the middle of the VOD
-npx twitch-dlp https://www.twitch.tv/videos/2022789761 --download-sections "*15:00-25:00"
+npx github:stronkbonk/twitch-dlp-mod https://www.twitch.tv/videos/2022789761 --download-sections "*15:00-25:00"
 
 # Download the last 10 minutes of a live stream and stop
-npx twitch-dlp https://www.twitch.tv/xqc --live-from-start --download-last 10m
+npx github:stronkbonk/twitch-dlp-mod https://www.twitch.tv/xqc --live-from-start --download-last 10m
 
 # Download everything from the start of the stream up to the moment you started
 # the download (a snapshot of the stream so far), then stop
-npx twitch-dlp https://www.twitch.tv/xqc --live-from-start --until-now
+npx github:stronkbonk/twitch-dlp-mod https://www.twitch.tv/xqc --live-from-start --until-now
 
 # Download a specific part of a live stream. If the stream hasn't reached
 # 1:30:00 yet, wait for it and stop when the section is complete
-npx twitch-dlp https://www.twitch.tv/xqc --live-from-start --download-sections "*1:30:00-1:45:00"
+npx github:stronkbonk/twitch-dlp-mod https://www.twitch.tv/xqc --live-from-start --download-sections "*1:30:00-1:45:00"
 
 # Download the first 30 minutes of a live stream
-npx twitch-dlp https://www.twitch.tv/xqc --live-from-start --duration 30m
+npx github:stronkbonk/twitch-dlp-mod https://www.twitch.tv/xqc --live-from-start --duration 30m
 
 # Download the last 10 minutes of a VOD
-npx twitch-dlp https://www.twitch.tv/videos/2022789761 --download-last 10m
+npx github:stronkbonk/twitch-dlp-mod https://www.twitch.tv/videos/2022789761 --download-last 10m
 
 # See what would be downloaded without downloading it
-npx twitch-dlp https://www.twitch.tv/xqc --live-from-start --until-now --dry-run
+npx github:stronkbonk/twitch-dlp-mod https://www.twitch.tv/xqc --live-from-start --until-now --dry-run
 
 # Download fragments in parallel, save metadata and ping a webhook when done
-npx twitch-dlp https://www.twitch.tv/videos/2022789761 --frag-concurrency 4 \
+npx github:stronkbonk/twitch-dlp-mod https://www.twitch.tv/videos/2022789761 --frag-concurrency 4 \
   --write-info-json --webhook "https://discord.com/api/webhooks/..."
 
 # Save the video to a different directory
-npx twitch-dlp https://www.twitch.tv/videos/2022789761 -P ./downloads
+npx github:stronkbonk/twitch-dlp-mod https://www.twitch.tv/videos/2022789761 -P ./downloads
 
 # Display available formats
-npx twitch-dlp https://www.twitch.tv/videos/2022789761 -F
+npx github:stronkbonk/twitch-dlp-mod https://www.twitch.tv/videos/2022789761 -F
 
 # Download specified format
-npx twitch-dlp https://www.twitch.tv/videos/2022789761 -f 480p30
+npx github:stronkbonk/twitch-dlp-mod https://www.twitch.tv/videos/2022789761 -f 480p30
 
 # Change output template
-npx twitch-dlp https://www.twitch.tv/videos/2022789761 -o "%(title)s [%(id)s].%(ext)s"
+npx github:stronkbonk/twitch-dlp-mod https://www.twitch.tv/videos/2022789761 -o "%(title)s [%(id)s].%(ext)s"
 
 # Limit download rate
-npx twitch-dlp https://www.twitch.tv/videos/2022789761 -r 720k
+npx github:stronkbonk/twitch-dlp-mod https://www.twitch.tv/videos/2022789761 -r 720k
 
 # Merge already downloaded fragments (if something went wrong)
 # Filename must match the fragment names but without ".part-FragN"
 # Use `--download-sections` if you want to merge only specific part of the video
-npx twitch-dlp "./Chillin [v2222470239].mp4" --merge-fragments
+npx github:stronkbonk/twitch-dlp-mod "./Chillin [v2222470239].mp4" --merge-fragments
 
 # Merge already downloaded fragments and try to unmute muted fragments
-npx twitch-dlp "./Chillin [v2222470239].mp4" --merge-fragments --unmute quality
+npx github:stronkbonk/twitch-dlp-mod "./Chillin [v2222470239].mp4" --merge-fragments --unmute quality
 ```
 
 ## Options
@@ -280,7 +292,8 @@ npx twitch-dlp "./Chillin [v2222470239].mp4" --merge-fragments --unmute quality
 --merge-fragments           Merge already downloaded fragments. A FILENAME
                             should be passed instead of a video link. The 
                             FILENAME must match the fragment names but without
-                            ".part-FragN". Example: "npx twitch-dlp FILENAME
+                            ".part-FragN". Example: "npx
+                            github:stronkbonk/twitch-dlp-mod FILENAME
                             --merge-fragments".
                             Can be used with:
                             * --download-sections - merge only specific part

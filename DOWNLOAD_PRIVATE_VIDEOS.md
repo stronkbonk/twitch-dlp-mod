@@ -17,9 +17,9 @@
 Just use a direct link to a stream from twitchtracker.com, streamscharts.com or sullygnome.com
 
 ```bash
-npx twitch-dlp https://twitchtracker.com/xqc/streams/51582913581
-npx twitch-dlp https://streamscharts.com/channels/lirik/streams/51579711693
-npx twitch-dlp https://sullygnome.com/channel/summit1g/stream/315782796250
+npx github:stronkbonk/twitch-dlp-mod https://twitchtracker.com/xqc/streams/51582913581
+npx github:stronkbonk/twitch-dlp-mod https://streamscharts.com/channels/lirik/streams/51579711693
+npx github:stronkbonk/twitch-dlp-mod https://sullygnome.com/channel/summit1g/stream/315782796250
 ```
 
 It should work in most cases. Try Method 2 if it doesn't work for you.
@@ -80,12 +80,12 @@ Example:
 
 ### Step 4
 
-Use the result from the previous step to download the VOD with [twitch-dlp](https://github.com/DmitryScaletta/twitch-dlp).
+Use the result from the previous step to download the VOD with [twitch-dlp-mod](https://github.com/stronkbonk/twitch-dlp-mod).
 
 ```bash
 # examples
-npx twitch-dlp video:xqc_51582913581_1721686515
-npx twitch-dlp video:lirik_51579711693_1721664413
+npx github:stronkbonk/twitch-dlp-mod video:xqc_51582913581_1721686515
+npx github:stronkbonk/twitch-dlp-mod video:lirik_51579711693_1721664413
 ```
 
 If you can't download using twitchtracker, try streamscharts and vice versa.

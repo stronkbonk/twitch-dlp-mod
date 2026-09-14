@@ -8,9 +8,21 @@
     "type": "git",
     "url": "git+https://github.com/stronkbonk/twitch-dlp-mod.git"
   },
+  "homepage": "https://github.com/stronkbonk/twitch-dlp-mod#readme",
+  "keywords": [
+    "twitch",
+    "twitch-dlp",
+    "vod",
+    "hls",
+    "livestream",
+    "download",
+    "cli"
+  ],
   "type": "module",
   "files": [],
-  "bin": "twitch-dlp.js",
+  "bin": {
+    "twitch-dlp-mod": "./twitch-dlp.js"
+  },
   "scripts": {
     "start": "node ./src/main.ts",
     "build": "rolldown src/main.ts --platform node > twitch-dlp.js",
