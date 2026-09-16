@@ -1,6 +1,7 @@
 # twitch-dlp-mod
 
 [![CI](https://github.com/stronkbonk/twitch-dlp-mod/actions/workflows/ci.yml/badge.svg)](https://github.com/stronkbonk/twitch-dlp-mod/actions/workflows/ci.yml)
+[![Nightly live smoke test](https://github.com/stronkbonk/twitch-dlp-mod/actions/workflows/nightly.yml/badge.svg)](https://github.com/stronkbonk/twitch-dlp-mod/actions/workflows/nightly.yml)
 
 Download any twitch VODs from start during live broadcast
 
@@ -109,6 +110,28 @@ npm start -- LINK
 # rebuild the bundle after changing the sources
 npm run build
 ```
+
+### Nightly live smoke test
+
+The unit tests are pure logic, so none of them talk to Twitch. Once a night a
+[workflow](.github/workflows/nightly.yml) downloads a few seconds of a live
+stream from start, so a change on Twitch's side (their API, their playlists,
+the fragment URLs) is noticed there instead of by whoever downloads next. It
+picks a live channel that stores past broadcasts, tries the next one when a
+channel turns out to be unusable, and fails when nothing downloads. Failures are
+reported as an issue automatically.
+
+Run the same check locally:
+
+```bash
+npm run smoke:live
+
+# Try specific channels, or another length
+# (PowerShell: $env:SMOKE_CHANNELS = "xqc,kaicenat")
+SMOKE_CHANNELS=xqc,kaicenat SMOKE_SECONDS=30 npm run smoke:live
+```
+
+`ffmpeg` has to be installed for the check to validate the result.
 
 ### Examples
 

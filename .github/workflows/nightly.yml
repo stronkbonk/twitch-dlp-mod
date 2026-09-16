@@ -1,0 +1,96 @@
+name: Nightly live smoke test
+
+# Downloads a few seconds of a live Twitch stream once a night, so a change on
+# Twitch's side (their API, playlists or fragment URLs) surfaces here instead of
+# on a user's machine. The unit tests never touch the network, so this is the
+# only job that would notice.
+on:
+  schedule:
+    # 03:37 UTC, off the hour because that is the busiest slot for schedules
+    - cron: '37 3 * * *'
+  workflow_dispatch:
+    inputs:
+      channels:
+        description: Channels to try, comma separated. Empty picks a live one
+        required: false
+        type: string
+      seconds:
+        description: How many seconds to download
+        required: false
+        default: '20'
+        type: string
+
+permissions:
+  contents: read
+  # Only to open an issue when the test fails
+  issues: write
+
+jobs:
+  download:
+    name: download a few seconds of a live stream
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      SMOKE_CHANNELS: ${{ inputs.channels }}
+      SMOKE_SECONDS: ${{ inputs.seconds || '20' }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 10.22.0
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Show the tools used
+        run: |
+          node --version
+          command -v ffmpeg
+          ffmpeg -version | head -1
+
+      - name: Download a few seconds of a live stream
+        run: pnpm run smoke:live
+
+      - name: Open or update an issue about the failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          body=$(cat <<EOF
+          Downloading a few seconds of a live Twitch stream failed on $(date -u +%Y-%m-%d).
+
+          This usually means Twitch changed its API, its playlists or the fragment URLs, and not that this repository changed.
+
+          Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+          The channel that was tried and what happened to it is in the run summary.
+          EOF
+          )
+          existing=$(gh issue list --repo "$GITHUB_REPOSITORY" --state open \
+            --search "Nightly live smoke test is failing in:title" \
+            --json number --jq '.[0].number')
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --repo "$GITHUB_REPOSITORY" --body "$body"
+          else
+            gh issue create --repo "$GITHUB_REPOSITORY" \
+              --title "Nightly live smoke test is failing" --body "$body"
+          fi
+
+      - name: Close the issue once it passes again
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          existing=$(gh issue list --repo "$GITHUB_REPOSITORY" --state open \
+            --search "Nightly live smoke test is failing in:title" \
+            --json number --jq '.[0].number')
+          if [ -n "$existing" ]; then
+            gh issue close "$existing" --repo "$GITHUB_REPOSITORY" \
+              --comment "The nightly live smoke test downloads a live stream again: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          fi

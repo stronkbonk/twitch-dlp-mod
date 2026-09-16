@@ -28,7 +28,8 @@
     "build": "rolldown src/main.ts --platform node > twitch-dlp.js",
     "test": "node --experimental-transform-types --test **/*.test.ts",
     "test:watch": "node --experimental-transform-types --test --watch **/*.test.ts",
-    "test:types": "tsc --noEmit"
+    "test:types": "tsc --noEmit",
+    "smoke:live": "node --experimental-transform-types scripts/nightly-live-smoke.ts"
   },
   "devDependencies": {
     "@trivago/prettier-plugin-sort-imports": "^6.0.0",
